@@ -14,11 +14,12 @@ http {
     gzip on;
     gzip_types text/plain application/json application/javascript text/css;
 
-    # DNS Resolver for resolving dynamic cloud domains (Render, Atlas, Cloudflare)
-    resolver 8.8.8.8 8.8.4.4 valid=300s ipv6=off;
+    # Dynamic DNS Resolver (Google DNS + Cloudflare)
+    # Defer resolution to runtime so Nginx starts without requiring upstreams to be registered in DNS at boot
+    resolver 8.8.8.8 1.1.1.1 valid=300s ipv6=off;
     resolver_timeout 10s;
 
-    # Extended timeouts to accommodate Render Free Tier cold-start wakeups (up to 120s)
+    # Extended timeouts for Render free tier cold-start wakeups (up to 120s)
     proxy_connect_timeout 120s;
     proxy_send_timeout 120s;
     proxy_read_timeout 120s;
@@ -44,15 +45,16 @@ http {
             return 204;
         }
 
-        # Central Gateway Health Check
+        # Central Gateway Health Check (Responds immediately for Render health checks)
         location /api/ping {
             default_type application/json;
             return 200 '{"status":"ok","gateway":"fitness-api-gateway"}';
         }
 
-        # 1. Auth & User Service
+        # 1. Auth & User Service (Dynamic upstream resolution)
         location /api/auth {
-            proxy_pass ${AUTH_SERVICE_URL}/api/auth;
+            set $upstream_auth "${AUTH_SERVICE_URL}";
+            proxy_pass $upstream_auth$request_uri;
             proxy_set_header Host ${AUTH_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -60,7 +62,8 @@ http {
         }
 
         location /api/user {
-            proxy_pass ${AUTH_SERVICE_URL}/api/user;
+            set $upstream_auth "${AUTH_SERVICE_URL}";
+            proxy_pass $upstream_auth$request_uri;
             proxy_set_header Host ${AUTH_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -69,7 +72,8 @@ http {
 
         # 2. Event & Pass Service
         location /api/events {
-            proxy_pass ${EVENT_SERVICE_URL}/api/events;
+            set $upstream_event "${EVENT_SERVICE_URL}";
+            proxy_pass $upstream_event$request_uri;
             proxy_set_header Host ${EVENT_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -77,7 +81,8 @@ http {
         }
 
         location /api/passes {
-            proxy_pass ${EVENT_SERVICE_URL}/api/passes;
+            set $upstream_event "${EVENT_SERVICE_URL}";
+            proxy_pass $upstream_event$request_uri;
             proxy_set_header Host ${EVENT_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -86,7 +91,8 @@ http {
 
         # 3. Booking & Catalog Service
         location /api/bookings {
-            proxy_pass ${BOOKING_SERVICE_URL}/api/bookings;
+            set $upstream_booking "${BOOKING_SERVICE_URL}";
+            proxy_pass $upstream_booking$request_uri;
             proxy_set_header Host ${BOOKING_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -94,7 +100,8 @@ http {
         }
 
         location /api/products {
-            proxy_pass ${BOOKING_SERVICE_URL}/api/products;
+            set $upstream_booking "${BOOKING_SERVICE_URL}";
+            proxy_pass $upstream_booking$request_uri;
             proxy_set_header Host ${BOOKING_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -102,7 +109,8 @@ http {
         }
 
         location /api/cars {
-            proxy_pass ${BOOKING_SERVICE_URL}/api/cars;
+            set $upstream_booking "${BOOKING_SERVICE_URL}";
+            proxy_pass $upstream_booking$request_uri;
             proxy_set_header Host ${BOOKING_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -111,7 +119,8 @@ http {
 
         # 4. Payment & Order Service
         location /api/payments {
-            proxy_pass ${PAYMENT_SERVICE_URL}/api/payments;
+            set $upstream_payment "${PAYMENT_SERVICE_URL}";
+            proxy_pass $upstream_payment$request_uri;
             proxy_set_header Host ${PAYMENT_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -119,7 +128,8 @@ http {
         }
 
         location /api/coupons {
-            proxy_pass ${PAYMENT_SERVICE_URL}/api/coupons;
+            set $upstream_payment "${PAYMENT_SERVICE_URL}";
+            proxy_pass $upstream_payment$request_uri;
             proxy_set_header Host ${PAYMENT_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -127,7 +137,8 @@ http {
         }
 
         location /api/settings {
-            proxy_pass ${PAYMENT_SERVICE_URL}/api/settings;
+            set $upstream_payment "${PAYMENT_SERVICE_URL}";
+            proxy_pass $upstream_payment$request_uri;
             proxy_set_header Host ${PAYMENT_HOST};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

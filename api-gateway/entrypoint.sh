@@ -4,16 +4,25 @@ set -e
 # Default port to Render's $PORT, or 1000 for local docker compose
 export PORT="${PORT:-1000}"
 
-# Helper function to sanitize URLs (strip trailing slashes, prepend https:// if missing)
+# Helper function to sanitize URLs (strip trailing slashes, auto-append .onrender.com if needed, prepend https:// if missing)
 format_url() {
   url="$1"
   # Strip trailing slash
   url="${url%/}"
+
+  # If url does not contain a dot '.' and does not contain a colon ':'
+  # It is a raw Render service name (e.g. "fitness-auth-service") injected by Render Blueprint
+  case "$url" in
+    *:*|*.*) ;;
+    *) url="${url}.onrender.com" ;;
+  esac
+
   # Prepend https:// if protocol is missing
   case "$url" in
     http://*|https://*) ;;
     *) url="https://$url" ;;
   esac
+
   echo "$url"
 }
 
