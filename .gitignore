@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
