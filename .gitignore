@@ -1,3 +1,10 @@
+# Environment and Secrets
+.env
+.env.*
+*.env
+!.env.example
+atlas-credentials.env
+
 # Dependencies
 node_modules/
 .pnp
