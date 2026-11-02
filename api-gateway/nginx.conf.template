@@ -65,7 +65,10 @@ http {
 
         # 1. Auth & User Service (Dynamic upstream resolution)
         location /api/auth {
-            set $upstream_auth "${AUTH_SERVICE_URL}";
+            # Prefer the env var; fallback to local Docker name
+            set $upstream_auth "${AUTH_SERVICE_URL:-http://auth-service:1001}";
+            # Ensure a trailing slash so request_uri is appended correctly
+            if ($upstream_auth !~ /$) { set $upstream_auth "${upstream_auth}/"; }
             proxy_pass $upstream_auth$request_uri;
             proxy_set_header Host ${AUTH_HOST};
             proxy_set_header X-Real-IP $remote_addr;
