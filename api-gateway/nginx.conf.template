@@ -48,6 +48,13 @@ http {
 
         # Handle Preflight OPTIONS requests
         if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '$http_origin' always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,Pragma' always;
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
             return 204;
         }
 
@@ -65,20 +72,7 @@ http {
 
         # 1. Auth & User Service (Dynamic upstream resolution)
         location /api/auth {
-            # Use env var; fallback to local Docker name
             set $upstream_auth "${AUTH_SERVICE_URL}";
-            if ($upstream_auth = "") { set $upstream_auth "http://auth-service:1001"; }
-            # Ensure trailing slash
-            if ($upstream_auth !~ /$) { set $upstream_auth "${upstream_auth}/"; }
-            proxy_pass $upstream_auth$request_uri;
-            proxy_set_header Host ${AUTH_HOST};
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            # Prefer the env var; fallback to local Docker name
-            set $upstream_auth "${AUTH_SERVICE_URL:-http://auth-service:1001}";
-            # Ensure a trailing slash so request_uri is appended correctly
-            if ($upstream_auth !~ /$) { set $upstream_auth "${upstream_auth}/"; }
             proxy_pass $upstream_auth$request_uri;
             proxy_set_header Host ${AUTH_HOST};
             proxy_set_header X-Real-IP $remote_addr;
