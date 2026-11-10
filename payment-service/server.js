@@ -7,11 +7,13 @@ import { connectDB } from "./config/db.js";
 import paymentRouter from "./routes/paymentRoutes.js";
 import couponRouter from "./routes/couponRoutes.js";
 import settingRouter from "./routes/settingRoutes.js";
+import SystemMonitor from "./utils/systemMonitor.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 1004;
+const monitor = new SystemMonitor("fitness-payment-service");
 
 // Allowed Origins for CORS
 const allowedOrigins = [
@@ -71,6 +73,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+app.use(morgan("combined", { stream: monitor.morganStream }));
+
+// Monitoring routes (accessible via Gateway /api/payments/monitoring or directly)
+monitor.attachRoutes(app, "/api/payments/monitoring");
 
 // Routes
 app.use("/api/payments", paymentRouter);
@@ -79,7 +85,13 @@ app.use("/api/settings", settingRouter);
 
 // Health check
 app.get("/health", (req, res) => {
-  res.json({ service: "payment-service", status: "healthy", port: PORT, time: new Date() });
+  res.json({
+    service: "fitness-payment-service",
+    status: "healthy",
+    port: PORT,
+    uptime: Math.floor(process.uptime()),
+    time: new Date(),
+  });
 });
 
 // Start service

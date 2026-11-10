@@ -6,11 +6,13 @@ import morgan from "morgan";
 import { connectDB } from "./config/db.js";
 import eventRouter from "./routes/eventRoutes.js";
 import passRouter from "./routes/passRoute.js";
+import SystemMonitor from "./utils/systemMonitor.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 1002;
+const monitor = new SystemMonitor("fitness-event-service");
 
 // Allowed Origins for CORS
 const allowedOrigins = [
@@ -70,6 +72,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+app.use(morgan("combined", { stream: monitor.morganStream }));
+
+// Monitoring routes (accessible via Gateway /api/events/monitoring or directly)
+monitor.attachRoutes(app, "/api/events/monitoring");
 
 // Routes
 app.use("/api/events", eventRouter);
@@ -77,7 +83,13 @@ app.use("/api/passes", passRouter);
 
 // Health check
 app.get("/health", (req, res) => {
-  res.json({ service: "event-service", status: "healthy", port: PORT, time: new Date() });
+  res.json({
+    service: "fitness-event-service",
+    status: "healthy",
+    port: PORT,
+    uptime: Math.floor(process.uptime()),
+    time: new Date(),
+  });
 });
 
 // Start service

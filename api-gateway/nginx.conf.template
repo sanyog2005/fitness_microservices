@@ -49,13 +49,13 @@ http {
         # Central Gateway Health Check (Responds immediately for Render health checks)
         location /api/ping {
             default_type application/json;
-            return 200 '{"status":"ok","gateway":"fitness-api-gateway"}';
+            return 200 '{"status":"ok","service":"fitness-api-gateway","type":"reverse-proxy"}';
         }
 
         # Gateway Info & Route Inspection
         location /api/gateway-info {
             default_type application/json;
-            return 200 '{"gateway":"ok","auth":"${AUTH_SERVICE_URL}","event":"${EVENT_SERVICE_URL}","booking":"${BOOKING_SERVICE_URL}","payment":"${PAYMENT_SERVICE_URL}"}';
+            return 200 '{"status":"ok","service":"fitness-api-gateway","type":"reverse-proxy","timestamp":"$time_iso8601","upstreams":{"auth":"${AUTH_SERVICE_URL}","event":"${EVENT_SERVICE_URL}","booking":"${BOOKING_SERVICE_URL}","payment":"${PAYMENT_SERVICE_URL}"}}';
         }
 
         # 1. Auth & User Service (Dynamic upstream resolution)
