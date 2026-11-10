@@ -52,6 +52,11 @@ http {
             return 200 '{"status":"ok","service":"fitness-api-gateway","type":"reverse-proxy"}';
         }
 
+        location = /health {
+            default_type application/json;
+            return 200 '{"status":"ok","service":"fitness-api-gateway","type":"reverse-proxy"}';
+        }
+
         # Gateway Info & Route Inspection
         location /api/gateway-info {
             default_type application/json;
